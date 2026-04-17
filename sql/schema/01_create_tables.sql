@@ -68,16 +68,15 @@ create table venues
     capacity    Int NOT NULL CHECK (capacity > 0),
     contact_info    varchar(200),
     coordinates        point NOT NULL,
-    indoor_outdoor VARCHAR(10) NOT NULL
-        CHECK (UPPER(indoor_outdoor) IN ('INDOOR', 'OUTDOOR', 'BOTH')),
+    indoor_outdoor VARCHAR(10) NOT NULL,
     primary key(venue_id),
     foreign key(city_id) references cities(city_id)
     );
 
 create table routing
     (routing_id                    BIGSERIAL,
-    distance                    Int NOT NULL CHECK (distance > 0),
-    estimated_travel_time        Int NOT NULL CHECK (estimated_travel_time > 0),
+    distance                    Int NOT NULL,
+    estimated_travel_time        Int NOT NULL,
     from_venue_id                Int NOT NULL,
     to_venue_id                    INT NOT NULL,
     primary key(routing_id),
