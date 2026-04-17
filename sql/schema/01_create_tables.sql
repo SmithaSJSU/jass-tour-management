@@ -173,10 +173,3 @@ CREATE TABLE SHOW_CREW_ASSIGNMENT (
     CONSTRAINT unique_show_crew 
         UNIQUE (show_id, crew_id)
 );
-
-
-
-
-
-
-
