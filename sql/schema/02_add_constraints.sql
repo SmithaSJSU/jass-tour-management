@@ -196,5 +196,31 @@ ALTER COLUMN requires_climate_control SET DEFAULT FALSE;
 ALTER TABLE TICKET_INVENTORY
 ALTER COLUMN service_fees SET DEFAULT 0.00,
 ALTER COLUMN hold_quantity SET DEFAULT 0;
+
+-- ============================================
+-- CONSTRAINTS - Shows, Artists & Tours Schema
+-- ============================================
+
+-- MANAGERS
+ALTER TABLE MANAGERS
+ADD CONSTRAINT uq_manager_email UNIQUE (contact_email);
+
+-- TOURS
+ALTER TABLE TOURS
+ADD CONSTRAINT chk_tour_dates CHECK (end_date > start_date);
+ 
+-- TOUR_LEGS
+ALTER TABLE TOUR_LEGS
+ADD CONSTRAINT chk_leg_dates CHECK (end_date > start_date);
+ 
+ALTER TABLE TOUR_LEGS
+ADD CONSTRAINT uq_leg_region UNIQUE (tour_id, region);
+ 
+-- SHOWS
+ALTER TABLE SHOWS
+ADD CONSTRAINT chk_show_status CHECK (status IN ('scheduled', 'cancelled', 'completed', 'postponed'));
+ 
+ALTER TABLE SHOWS
+ADD CONSTRAINT uq_venue_date UNIQUE (venue_id, show_date, start_time);
  
  
