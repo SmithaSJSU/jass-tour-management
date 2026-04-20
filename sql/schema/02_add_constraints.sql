@@ -153,7 +153,34 @@ CHECK (
     check_in_time IS NULL OR 
     check_out_time >= check_in_time
 );
- 
+
+-- ============================================
+-- CHECK CONSTRAINTS - venues
+-- ============================================
+
+-- Capacity is greater than 0
+ALTER TABLE venues
+ADD CONSTRAINT chk_cap_non_negative
+CHECK (capacity > 0);
+
+-- Indoor/outdoor type must be valid
+ALTER TABLE venues
+ADD CONSTRAINT chk_indoor_outdoor
+CHECK (UPPER(indoor_outdoor) IN ('INDOOR', 'OUTDOOR', 'BOTH'));
+
+-- ============================================
+-- CHECK CONSTRAINTS - routing
+-- ============================================
+
+-- Distance is non-negative
+ALTER TABLE routing
+ADD CONSTRAINT chk_distance
+CHECK (distance >= 0);
+
+-- Travel time is non-negative
+ALTER TABLE routing
+ADD CONSTRAINT chk_travel_time
+CHECK (estimated_travel_time >= 0);
  
 -- ============================================
 -- UNIQUE CONSTRAINTS
@@ -222,5 +249,6 @@ ADD CONSTRAINT chk_show_status CHECK (status IN ('scheduled', 'cancelled', 'comp
  
 ALTER TABLE SHOWS
 ADD CONSTRAINT uq_venue_date UNIQUE (venue_id, show_date, start_time);
+ 
  
  
