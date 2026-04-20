@@ -172,3 +172,137 @@ CREATE TABLE SHOW_CREW_ASSIGNMENT (
     CONSTRAINT unique_show_crew 
         UNIQUE (show_id, crew_id)
 );
+
+
+-- ============================================================
+-- CONTRACTS & FINANCE MODULE 
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS promoter (
+    promoter_id     SERIAL          PRIMARY KEY,
+    company_name    VARCHAR(200)    NOT NULL,
+    contact_name    VARCHAR(150)    NOT NULL,
+    contact_email   VARCHAR(254)    NOT NULL,
+    phone           VARCHAR(30),
+    primary_market  VARCHAR(100),
+    payment_terms   VARCHAR(200)
+);
+
+COMMENT ON TABLE  promoter IS 'Promotion companies that book and finance shows for artists.';
+COMMENT ON COLUMN promoter.primary_market IS 'Geographic region or genre the promoter typically operates in.';
+COMMENT ON COLUMN promoter.payment_terms  IS 'Default net-terms or payment arrangement (e.g. Net-30, 50/50 split).';
+
+
+CREATE TABLE IF NOT EXISTS contract (
+    contract_id       SERIAL          PRIMARY KEY,
+    show_id           INT             NOT NULL,
+    contract_type     VARCHAR(50)     NOT NULL
+                          CHECK (contract_type IN ('guarantee', 'percentage', 'hybrid', 'flat_fee')),
+    agreed_amount     NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    percentage_of_net NUMERIC(5,2)    CHECK (percentage_of_net >= 0 AND percentage_of_net <= 100),
+    status            VARCHAR(30)     NOT NULL DEFAULT 'draft'
+                          CHECK (status IN ('draft', 'sent', 'signed', 'cancelled', 'disputed')),
+    terms             TEXT,
+    signed_date       DATE
+);
+
+COMMENT ON TABLE  contract IS 'Legal agreements between the artist/manager and a promoter for a specific show.';
+COMMENT ON COLUMN contract.contract_type IS 'Payment model: guarantee (fixed), percentage (of net), hybrid (guarantee + % overage), or flat_fee.';
+COMMENT ON COLUMN contract.agreed_amount IS 'Guaranteed dollar amount the artist receives regardless of ticket sales.';
+COMMENT ON COLUMN contract.percentage_of_net IS 'Artist share of net revenue after expenses, used in percentage/hybrid deals.';
+
+
+CREATE TABLE IF NOT EXISTS expense (
+    expense_id    SERIAL          PRIMARY KEY,
+    show_id       INT,
+    tour_id       INT,
+    leg_id        INT,
+    amount        NUMERIC(12,2)   NOT NULL CHECK (amount >= 0),
+    expense_date  DATE            NOT NULL,
+    category      VARCHAR(60)     NOT NULL
+                      CHECK (category IN (
+                          'venue_rental', 'production', 'catering', 'travel',
+                          'lodging', 'equipment', 'insurance', 'marketing',
+                          'crew', 'permits', 'miscellaneous'
+                      )),
+    description   TEXT,
+    vendor_name   VARCHAR(200),
+    receipt_no    VARCHAR(100),
+    approved_by   VARCHAR(150),
+
+    CONSTRAINT chk_expense_scope CHECK (
+        (  (show_id IS NOT NULL)::INT
+         + (tour_id IS NOT NULL)::INT
+         + (leg_id  IS NOT NULL)::INT
+        ) = 1
+    )
+);
+
+COMMENT ON TABLE  expense IS 'Line-item costs incurred at the show, tour, or leg level.';
+COMMENT ON COLUMN expense.show_id IS 'Set when the expense is tied to a single show (e.g. local catering).';
+COMMENT ON COLUMN expense.tour_id IS 'Set for tour-wide costs not tied to a single show (e.g. bus lease, insurance).';
+COMMENT ON COLUMN expense.leg_id  IS 'Set for leg-level costs (e.g. regional equipment shipping).';
+
+
+CREATE TABLE IF NOT EXISTS payment (
+    payment_id     SERIAL          PRIMARY KEY,
+    contract_id    INT,
+    expense_id     INT,
+    amount         NUMERIC(12,2)   NOT NULL CHECK (amount > 0),
+    payment_date   DATE            NOT NULL,
+    payment_method VARCHAR(40)     NOT NULL
+                       CHECK (payment_method IN ('wire', 'ach', 'check', 'credit_card', 'cash')),
+    status         VARCHAR(30)     NOT NULL DEFAULT 'pending'
+                       CHECK (status IN ('pending', 'completed', 'failed', 'refunded')),
+    payment_type   VARCHAR(40)     NOT NULL
+                       CHECK (payment_type IN (
+                           'deposit', 'artist_guarantee', 'artist_percentage',
+                           'vendor_payment', 'reimbursement', 'settlement_payout'
+                       )),
+
+    CONSTRAINT chk_payment_parent CHECK (
+        contract_id IS NOT NULL OR expense_id IS NOT NULL
+    )
+);
+
+COMMENT ON TABLE  payment IS 'Individual money movements — contract payouts to artists and vendor disbursements for expenses.';
+COMMENT ON COLUMN payment.contract_id IS 'Set when this payment fulfills a contractual obligation (artist guarantee, percentage split).';
+COMMENT ON COLUMN payment.expense_id  IS 'Set when this payment reimburses or pays a vendor for a recorded expense.';
+COMMENT ON COLUMN payment.payment_type IS 'Classifies the business reason for the payment.';
+
+
+CREATE TABLE IF NOT EXISTS settlement (
+    settlement_id        SERIAL          PRIMARY KEY,
+    show_id              INT             NOT NULL UNIQUE,
+    gross_ticket_revenue NUMERIC(14,2)   NOT NULL DEFAULT 0,
+    ticket_fees          NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    venue_rent           NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    production_costs     NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    crew_costs           NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    other_expenses       NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    net_revenue          NUMERIC(14,2)   NOT NULL GENERATED ALWAYS AS (
+                             gross_ticket_revenue
+                             - ticket_fees
+                             - venue_rent
+                             - production_costs
+                             - crew_costs
+                             - other_expenses
+                         ) STORED,
+    artist_payment       NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    promoter_profit      NUMERIC(14,2)   NOT NULL GENERATED ALWAYS AS (
+                             gross_ticket_revenue
+                             - ticket_fees
+                             - venue_rent
+                             - production_costs
+                             - crew_costs
+                             - other_expenses
+                             - artist_payment
+                         ) STORED,
+    settlement_date      DATE            NOT NULL,
+    status               VARCHAR(30)     NOT NULL DEFAULT 'pending'
+                             CHECK (status IN ('pending', 'finalized', 'disputed', 'amended'))
+);
+
+COMMENT ON TABLE  settlement IS 'Signed financial reconciliation for a completed show — one settlement per show.';
+COMMENT ON COLUMN settlement.net_revenue IS 'Auto-computed: gross_ticket_revenue minus all cost line items.';
+COMMENT ON COLUMN settlement.promoter_profit IS 'Auto-computed: net_revenue minus artist_payment.';

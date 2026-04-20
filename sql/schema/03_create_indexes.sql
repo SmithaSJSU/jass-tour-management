@@ -199,4 +199,24 @@ ANALYZE ARTISTS;
 ANALYZE TOURS;
 ANALYZE TOUR_LEGS;
 ANALYZE SHOWS;
+
+
+-- ============================================================
+-- CONTRACTS & FINANCE — Indexes
+-- ============================================================
+
+CREATE INDEX idx_contract_show   ON contract (show_id);
+CREATE INDEX idx_contract_status ON contract (status);
+
+CREATE INDEX idx_expense_show ON expense (show_id) WHERE show_id IS NOT NULL;
+CREATE INDEX idx_expense_tour ON expense (tour_id) WHERE tour_id IS NOT NULL;
+CREATE INDEX idx_expense_leg  ON expense (leg_id)  WHERE leg_id  IS NOT NULL;
+CREATE INDEX idx_expense_date ON expense (expense_date);
+
+CREATE INDEX idx_payment_contract ON payment (contract_id) WHERE contract_id IS NOT NULL;
+CREATE INDEX idx_payment_expense  ON payment (expense_id)  WHERE expense_id  IS NOT NULL;
+CREATE INDEX idx_payment_status   ON payment (status);
+
+CREATE INDEX idx_settlement_status ON settlement (status);
+CREATE INDEX idx_settlement_date   ON settlement (settlement_date);
  

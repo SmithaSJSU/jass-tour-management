@@ -249,6 +249,39 @@ ADD CONSTRAINT chk_show_status CHECK (status IN ('scheduled', 'cancelled', 'comp
  
 ALTER TABLE SHOWS
 ADD CONSTRAINT uq_venue_date UNIQUE (venue_id, show_date, start_time);
+
+-- ============================================================
+-- CONTRACTS & FINANCE — Foreign Key Constraints
+-- ============================================================
+
+ALTER TABLE contract
+    ADD CONSTRAINT fk_contract_show
+        FOREIGN KEY (show_id) REFERENCES shows (show_id)
+            ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE expense
+    ADD CONSTRAINT fk_expense_show
+        FOREIGN KEY (show_id) REFERENCES shows (show_id)
+            ON DELETE RESTRICT ON UPDATE CASCADE,
+    ADD CONSTRAINT fk_expense_tour
+        FOREIGN KEY (tour_id) REFERENCES tours (tour_id)
+            ON DELETE RESTRICT ON UPDATE CASCADE,
+    ADD CONSTRAINT fk_expense_leg
+        FOREIGN KEY (leg_id) REFERENCES tour_legs (leg_id)
+            ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE payment
+    ADD CONSTRAINT fk_payment_contract
+        FOREIGN KEY (contract_id) REFERENCES contract (contract_id)
+            ON DELETE RESTRICT ON UPDATE CASCADE,
+    ADD CONSTRAINT fk_payment_expense
+        FOREIGN KEY (expense_id) REFERENCES expense (expense_id)
+            ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE settlement
+    ADD CONSTRAINT fk_settlement_show
+        FOREIGN KEY (show_id) REFERENCES shows (show_id)
+            ON DELETE RESTRICT ON UPDATE CASCADE;
  
  
  
