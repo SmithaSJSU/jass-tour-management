@@ -36,6 +36,20 @@ ON SHOW_CREW_ASSIGNMENT(show_id);
  
 CREATE INDEX idx_show_crew_assignment_crew 
 ON SHOW_CREW_ASSIGNMENT(crew_id);
+
+-- ARTISTS
+CREATE INDEX idx_artists_manager_id ON ARTISTS(manager_id);
+
+-- TOURS
+CREATE INDEX idx_tours_artist_id ON TOURS(artist_id);
+
+-- TOUR_LEGS
+CREATE INDEX idx_tour_legs_tour_id ON TOUR_LEGS(tour_id);
+
+-- SHOWS
+CREATE INDEX idx_shows_leg_id ON SHOWS(leg_id);
+CREATE INDEX idx_shows_venue_id ON SHOWS(venue_id);
+CREATE INDEX idx_shows_promoter_id ON SHOWS(promoter_id);
  
  
 -- ============================================
@@ -74,6 +88,10 @@ ON CREW(role);
 -- Show crew assignments filtered by payment status
 CREATE INDEX idx_show_crew_payment_status 
 ON SHOW_CREW_ASSIGNMENT(payment_status);
+
+-- SHOWS
+CREATE INDEX idx_shows_show_date ON SHOWS(show_date);
+CREATE INDEX idx_shows_status ON SHOWS(status);
  
  
 -- ============================================
@@ -105,6 +123,9 @@ ON SHOW_CREW_ASSIGNMENT(show_id, payment_status);
 -- (Common query: "What equipment is on truck #5 for tour X?")
 CREATE INDEX idx_equipment_tour_transport 
 ON EQUIPMENT(tour_id, transport_id);
+
+-- Shows often queried by tour AND date together
+CREATE INDEX idx_shows_tour_date ON shows(tour_id, show_date);
  
  
 -- ============================================
@@ -127,7 +148,12 @@ WHERE requires_climate_control = TRUE;
 CREATE INDEX idx_ticket_inventory_available 
 ON TICKET_INVENTORY(show_id, section_name) 
 WHERE total_quantity > hold_quantity;
- 
+
+-- Index only active shows (not completed/cancelled)
+CREATE INDEX idx_shows_active 
+ON shows(show_date) 
+WHERE status IN ('scheduled', 'postponed');
+
  
 -- ============================================
 -- TEXT SEARCH INDEXES (Optional)
@@ -141,6 +167,19 @@ ON CREW(LOWER(person_name));
 -- Search equipment by description (case-insensitive)
 CREATE INDEX idx_equipment_description_lower 
 ON EQUIPMENT(LOWER(item_description));
+
+-- Search artists by name (case-insensitive)
+CREATE INDEX idx_artists_name_lower 
+ON artists(LOWER(name));
+
+-- ============================================
+-- Range INDEXES (support date range queries)
+-- ============================================
+
+-- TOURS
+CREATE INDEX idx_tours_dates ON TOURS(start_date, end_date);
+-- TOUR_LEGS
+CREATE INDEX idx_tour_legs_dates ON TOUR_LEGS(start_date, end_date);
  
  
 -- ============================================
@@ -155,4 +194,9 @@ ANALYZE TICKET_INVENTORY;
 ANALYZE TICKET_SALE;
 ANALYZE CREW;
 ANALYZE SHOW_CREW_ASSIGNMENT;
+ANALYZE MANAGERS;
+ANALYZE ARTISTS;
+ANALYZE TOURS;
+ANALYZE TOUR_LEGS;
+ANALYZE SHOWS;
  
