@@ -57,10 +57,10 @@ CREATE TABLE managers (
     contact_email VARCHAR(255)
 );
  
-CREATE TABLE countries (
-    country_id SERIAL PRIMARY KEY,
-    name VARCHAR(200) NOT NULL UNIQUE
-);
+create table countries
+	(country_ID		SERIAL PRIMARY KEY,
+	name			varchar(200) NOT NULL UNIQUE
+	);
  
 CREATE TABLE crew (
     crew_id SERIAL PRIMARY KEY,
