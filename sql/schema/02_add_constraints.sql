@@ -245,7 +245,7 @@ ADD CONSTRAINT uq_leg_region UNIQUE (tour_id, region);
  
 -- SHOWS
 ALTER TABLE SHOWS
-ADD CONSTRAINT chk_show_status CHECK (status IN ('scheduled', 'cancelled', 'completed', 'postponed'));
+ADD CONSTRAINT chk_show_status CHECK (status IN ('scheduled', 'cancelled', 'completed', 'rescheduled'));
  
 ALTER TABLE SHOWS
 ADD CONSTRAINT uq_venue_date UNIQUE (venue_id, show_date, start_time);
