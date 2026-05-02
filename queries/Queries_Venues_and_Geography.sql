@@ -127,4 +127,3 @@ LANGUAGE sql AS $$
 $$;
 
 SELECT * FROM venues_in_city('Berlin');
-
