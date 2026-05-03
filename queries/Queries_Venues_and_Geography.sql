@@ -55,7 +55,13 @@ WHERE s.show_id IS NULL
 ORDER BY co.name, ci.name, v.name;
 
 -- Function that when you type in a venue it returns the five nearest venues
-CREATE OR REPLACE FUNCTION nearest_venues(input_name VARCHAR, result_limit INT DEFAULT 5)
+CREATE OR REPLACE FUNCTION nearest_venues(
+    input_name      VARCHAR,
+    result_limit    INT DEFAULT 5,
+    min_capacity    INT DEFAULT 0,
+    max_capacity    INT DEFAULT 2147483647,
+    venue_type      VARCHAR DEFAULT 'all'
+)
 RETURNS TABLE (
     nearest_venue   VARCHAR,
     city            VARCHAR,
@@ -91,13 +97,14 @@ LANGUAGE sql AS $$
         JOIN cities ci ON v.city_id = ci.city_id
         JOIN countries co ON ci.country_id = co.country_id
         JOIN input_venue iv ON v.venue_id != iv.venue_id
+        WHERE v.capacity >= min_capacity
+          AND v.capacity <= max_capacity
+          AND (venue_type = 'all' OR LOWER(v.indoor_outdoor) = LOWER(venue_type))
     ) sub
     ORDER BY distance_miles ASC
     LIMIT result_limit;
 $$;
 
-SELECT * FROM nearest_venues('Royal Stadium');
-SELECT * FROM nearest_venues('Royal Stadium', 10);  -- top 10 instead
 
 -- Returns a function where you type in the name of a city and then it returns the venues and info associated with it
 CREATE OR REPLACE FUNCTION venues_in_city(input_city VARCHAR)
