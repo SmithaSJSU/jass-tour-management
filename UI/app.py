@@ -465,11 +465,13 @@ with st.sidebar:
 
     st.markdown('<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(139,92,246,0.5);padding:0.8rem 0.5rem 4px;">Shows Module</div>', unsafe_allow_html=True)
     shows_pages = [
-        "🎸  Tours by Artist",
-        "🗺️  Shows by Tour / Leg",
-        "🔍  Search Shows",
-        "📅  Reschedule / Cancel",
-        "🔔  Trigger Demo",
+    "🎸  Tours by Artist",
+    "🗺️  Shows by Tour / Leg",
+    "🔍  Search Shows",
+    "📅  Reschedule / Cancel",
+    "🔔  Trigger Demo",
+    "📍  Nearest Venues",
+    "🏙️  Venues in City",
     ]
 
     all_pages = finance_pages + shows_pages
@@ -1091,3 +1093,114 @@ elif page == "🔔  Trigger Demo":
                         st.experimental_memo.clear()
                     else:
                         st.error(f"❌ {err}")
+elif page == "📍  Nearest Venues":
+    st.title("📍 Nearest Venues")
+    st.caption("Find the closest venues to any venue in the database using the Haversine formula.")
+
+    # Load all venues for autocomplete
+    venues_df = run_query("SELECT name FROM venues ORDER BY name")
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        venue_name = st.selectbox("Select Venue", venues_df["name"].tolist())
+    with col2:
+        result_limit = st.number_input("Number of Results", min_value=1, max_value=20, value=5)
+
+    # Filters
+    st.markdown("---")
+    st.subheader("🔧 Filter Results")
+    fc1, fc2, fc3 = st.columns(3)
+    with fc1:
+        venue_type = st.multiselect(
+            "Venue Type",
+            ["indoor", "outdoor", "both"],
+            default=["indoor", "outdoor", "both"]
+        )
+    with fc2:
+        min_capacity = st.number_input("Min Capacity", min_value=0, value=0, step=1000)
+    with fc3:
+        max_capacity = st.number_input("Max Capacity", min_value=0, value=100000, step=1000)
+
+    if st.button("Find Nearest Venues", type="primary"):
+        results = run_query(
+            """
+            SELECT * FROM nearest_venues(
+               %(name)s, 
+                %(limit)s,
+                %(min_cap)s,
+                %(max_cap)s,
+                %(vtype)s
+            )
+    """,
+    params={
+        "name":    venue_name,
+        "limit":   int(result_limit),
+        "min_cap": int(min_capacity),
+        "max_cap": int(max_capacity),
+        "vtype":   venue_type[0] if len(venue_type) == 1 else 'all'
+    }
+)
+
+        if results.empty:
+            st.error(f"No venue found matching '{venue_name}'.")
+        else:
+            # Apply filters
+            if venue_type:
+                results = results[results["indoor_outdoor"].isin(venue_type)]
+            results = results[
+                (results["capacity"] >= min_capacity) &
+                (results["capacity"] <= max_capacity)
+            ]
+
+            if results.empty:
+                st.warning("No venues match your filters. Try adjusting capacity or venue type.")
+            else:
+                # Summary metrics
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Venues Found", len(results))
+                col2.metric("Avg Distance", f"{results['distance_miles'].mean():.1f} mi")
+                col3.metric("Avg Capacity", f"{int(results['capacity'].mean()):,}")
+                col4.metric("Closest", f"{results['distance_miles'].min():.1f} mi")
+
+                st.markdown("---")
+                st.dataframe(results, use_container_width=True)
+
+                # Closest venue highlight
+                closest = results.iloc[0]
+                st.markdown("---")
+                st.subheader("🏆 Closest Matching Venue")
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Venue", closest["nearest_venue"])
+                col2.metric("Distance", f"{closest['distance_miles']} miles")
+                col3.metric("Capacity", f"{closest['capacity']:,}")
+                col4.metric("Type", closest["indoor_outdoor"].capitalize())
+elif page == "🏙️  Venues in City":
+    st.title("🏙️ Venues in City")
+    st.caption("Search for all venues in a city along with their show counts.")
+
+    cities_df = run_query("SELECT name FROM cities ORDER BY name")
+    city_name = st.selectbox("Select City", cities_df["name"].tolist())
+
+    if st.button("Search Venues", type="primary"):
+        if not city_name.strip():
+            st.warning("Please enter a city name.")
+        else:
+            results = run_query(
+                "SELECT * FROM venues_in_city(%(city)s)",
+                params={"city": city_name}
+            )
+            if results.empty:
+                st.info(f"No venues found in '{city_name}'.")
+            else:
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Venues Found", len(results))
+                col2.metric("Total Capacity", f"{results['capacity'].sum():,}")
+                col3.metric("Total Shows", int(results['total_shows'].sum()))
+                st.markdown("---")
+                indoor_count = len(results[results['indoor_outdoor'] == 'indoor'])
+                outdoor_count = len(results[results['indoor_outdoor'] == 'outdoor'])
+                col1, col2 = st.columns(2)
+                col1.metric("Indoor Venues", indoor_count)
+                col2.metric("Outdoor Venues", outdoor_count)
+                st.markdown("---")
+                st.dataframe(results, use_container_width=True)
