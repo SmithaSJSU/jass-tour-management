@@ -11,7 +11,7 @@
 | **Jack** | Venues & Geography | `countries`, `cities`, `venues`, `routing`, `show_sequence` |
 | **Anusha** | Tours & Shows | `managers`, `artists`, `tours`, `tour_legs`, `shows` |
 | **Supritha** | Contracts & Finance | `promoter`, `contract`, `expense`, `payment`, `settlement` |
-| **Smitha** *(Team Lead)* | Tickets & Logistics | `crew`, `transport`, `equipment`, `ticket_inventory`, `ticket_sale`, `show_crew_assignment` |
+| **Smitha** | Tickets & Logistics | `crew`, `transport`, `equipment`, `ticket_inventory`, `ticket_sale`, `show_crew_assignment` |
 
 ---
 
