@@ -269,7 +269,4 @@ SELECT
 ORDER BY tbl;
 ```
 
----
 
-*JASS Tour Management System — CS 157A Database Systems, Spring 2026*
-*Team: Jack • Anusha • Supritha • Smitha*
