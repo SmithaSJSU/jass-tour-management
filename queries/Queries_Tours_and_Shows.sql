@@ -165,7 +165,7 @@ WHERE a.artist_id = 1
 ORDER BY s.show_date;
 
 -- 12. Call reschedule_show procedure (show_id = 1, future date)
-CALL reschedule_show(1, CURRENT_DATE + INTERVAL '30 days', '20:00:00');
+CALL reschedule_show(1, (CURRENT_DATE + INTERVAL '30 days')::DATE, '20:00:00'::TIME);
 
 -- 13. Call cancel_show procedure (show_id = 2)
 CALL cancel_show(2);
