@@ -133,4 +133,18 @@ LANGUAGE sql AS $$
     ORDER BY v.capacity DESC;
 $$;
 
-SELECT * FROM venues_in_city('Berlin');
+-- Query to find the nearest venues to plan the next stop on a tour
+SELECT nv.*
+FROM show_sequence ss
+JOIN shows s ON ss.show_id = s.show_id
+JOIN venues v ON s.venue_id = v.venue_id
+CROSS JOIN LATERAL nearest_venues(v.name, 10) nv
+WHERE ss.tour_id = 40
+AND ss.sequence_number = (
+    SELECT MAX(sequence_number) 
+    FROM show_sequence 
+    WHERE tour_id = 40
+)
+ORDER BY nv.distance_miles;
+
+
