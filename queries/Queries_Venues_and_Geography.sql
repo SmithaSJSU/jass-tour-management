@@ -133,4 +133,4 @@ LANGUAGE sql AS $$
     ORDER BY v.capacity DESC;
 $$;
 
-SELECT * FROM venues_in_city('Berlin');
+-- SELECT * FROM venues_in_city('Berlin');
