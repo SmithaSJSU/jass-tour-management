@@ -55,10 +55,10 @@ jass-tour-management/
 │
 ├── queries/
 │   ├── module_queries/
-│   │   ├── jack_queries.sql
-│   │   ├── anusha_queries.sql
-│   │   ├── supritha_queries.sql
-│   │   └── smitha_queries.sql
+│   │   ├── Queries_Venues_and_Geography.sql
+│   │   ├── Queries_Tours_and_Shows.sql
+│   │   ├── Queries_Contracts_and_Finance.sql
+│   │   └── Queries_Tickets_and_Logistics.sql
 │   │
 │   └── complex_queries.sql          ← 5 cross-module queries
 │
